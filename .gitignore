@@ -590,3 +590,4 @@ FodyWeavers.xsd
 
 
 *.slnx
+.vscode/

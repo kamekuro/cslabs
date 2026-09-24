@@ -1,31 +1,28 @@
-﻿using System;
-using System.ComponentModel.Design;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Numerics;
 using System.Text.Json;
 
 namespace TestProject;
 
 public class Server
 {
-    public string Name { get; set; }
-    public string IpAddress { get; set; }
+    public required string Name { get; set; }
+    public required string IpAddress { get; set; }
     public int Port { get; set; }
-    public string GameVersion { get; set; }
+    public required string GameVersion { get; set; }
     public double UsageRAM { get; set; }
     public double UsageCPU { get; set; }
     public bool PVPIsAllow { get; set; }
     public int OnlinePlayers { get; set; }
     public int CountPlayers { get; set; }
     public int MaxOnline { get; set; }
-    public List<Player> Players { get; set; }
+    public List<Player>? Players { get; set; }
 }
 
 public class Player
 {
-    public string Login { get; set; }
-    public string Level { get; set; }
+    public string? Login { get; set; }
+    public string? Level { get; set; }
     public (double x, double y) Position { get; set; }
     public bool IsOnline { get; set; }
     public DateTime LastSeen { get; set; }
@@ -33,6 +30,8 @@ public class Player
 
 public class Lab1
 {
+    private static readonly JsonSerializerOptions json_options = new JsonSerializerOptions { WriteIndented = true };
+
     public static string GetLocalIPAddress()
     {
         var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -76,7 +75,7 @@ public class Lab1
         if (File.Exists("players.json"))
         {
             var playersData = File.ReadAllText("players.json");
-            players = JsonSerializer.Deserialize<List<Player>>(playersData);
+            players = JsonSerializer.Deserialize<List<Player>>(playersData) ?? [];
             players_generate = 2;
         }
 
@@ -95,18 +94,22 @@ public class Lab1
                 LastSeen = GenerateRandomLastSeen()
             });
         }
-        var players_json = JsonSerializer.Serialize(players, new JsonSerializerOptions { WriteIndented = true });
+        var players_json = JsonSerializer.Serialize(players, Lab1.json_options);
         File.WriteAllText("players.json", players_json);
 
 
         // server gen
         var online_players = players.Count(player => player.IsOnline);
         var max_online = online_players;
-        var server = new Server();
+        var server = new Server{
+            Name = "CSU Game Server",
+            IpAddress = GetLocalIPAddress(),
+            GameVersion = "1.21.1",
+        };
         if (File.Exists("server.json"))
         {
             var serverData = File.ReadAllText("server.json");
-            server = JsonSerializer.Deserialize<Server>(serverData);
+            server = JsonSerializer.Deserialize<Server>(serverData) ?? server;
             max_online = server.MaxOnline;
             if (online_players >= server.MaxOnline) { max_online = online_players; }
             Console.WriteLine("=======  LAST START SERVER DATA  =======");
@@ -131,7 +134,7 @@ public class Lab1
             UsageCPU = Math.Round(Random.Shared.NextDouble() * 100, 2),
             PVPIsAllow = true,
             OnlinePlayers = online_players,
-            CountPlayers = players.Count(),
+            CountPlayers = players.Count,
             MaxOnline = max_online,
             Players = players
         };
@@ -145,7 +148,7 @@ public class Lab1
         Console.WriteLine($"PVP enables: " + (server.PVPIsAllow ? "Yes" : "No"));
         Console.WriteLine($"Online players: {server.OnlinePlayers} / {server.CountPlayers}");
         Console.WriteLine($"Max Online: {server.MaxOnline}");
-        var server_json = JsonSerializer.Serialize(server, new JsonSerializerOptions { WriteIndented = true });
+        var server_json = JsonSerializer.Serialize(server, Lab1.json_options);
         File.WriteAllText("server.json", server_json);
 
 
@@ -157,10 +160,10 @@ public class Lab1
         {
             var index_string = $"{index}. ";
             Console.WriteLine(index_string + $"Login: {player.Login}");
-            Console.WriteLine((new string(' ', index_string.Length)) + $"Level: {player.Level}");
-            Console.WriteLine((new string(' ', index_string.Length)) + $"Position: ({player.Position.x}, {player.Position.y})");
-            Console.WriteLine((new string(' ', index_string.Length)) + $"Is online: " + (player.IsOnline ? "Yes" : "No"));
-            Console.WriteLine((new string(' ', index_string.Length)) + $"Last seen: " + (player.IsOnline ? "User is online" : player.LastSeen.ToString("dd.MM.yyyy HH:mm")));
+            Console.WriteLine(new string(' ', index_string.Length) + $"Level: {player.Level}");
+            Console.WriteLine(new string(' ', index_string.Length) + $"Position: ({player.Position.x}, {player.Position.y})");
+            Console.WriteLine(new string(' ', index_string.Length) + $"Is online: " + (player.IsOnline ? "Yes" : "No"));
+            Console.WriteLine(new string(' ', index_string.Length) + $"Last seen: " + (player.IsOnline ? "User is online" : player.LastSeen.ToString("dd.MM.yyyy HH:mm")));
             index++;
         }
 
